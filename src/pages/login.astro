@@ -1,0 +1,99 @@
+---
+import Layout from "../components/layout.astro";
+// import { redirectIfLoggedIn } from "../session";
+// const { cookies, redirect } = Astro;
+// return redirectIfLoggedIn({ cookies, redirect });
+---
+
+<Layout>
+  <div class="login-container">
+    <form action="/api/login" method="POST" class="login-form">
+      <h1>Login to Your Account</h1>
+      <div class="input-group">
+        <label for="username">Usuario:</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          required
+          placeholder="Ingresá tu usuario"
+        />
+      </div>
+      <div class="input-group">
+        <label for="password">Contraseña:</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          required
+          placeholder="Ingresá tu contraseña"
+        />
+      </div>
+      <div class="submit-group">
+        <button type="submit" class="submit-button">Iniciar sesión</button>
+      </div>
+    </form>
+  </div>
+</Layout>
+
+<style>
+  .login-container {
+        max-width: 400px;
+        margin: 2rem auto;
+        padding: var(--size-4);
+        box-shadow: var(--shadow-md);
+        border: 2px solid var(--gray-6);
+        border-radius: var(--radius-3);
+        background: var(--white);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .login-form {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: var(--size-3);
+    }
+
+    .input-group label {
+        display: block;
+        font-weight: var(--font-bold);
+        margin-bottom: var(--size-1);
+    }
+
+    .input-group input {
+        width: 100%;
+        padding: var(--size-2);
+        border: 1px solid var(--gray-5);
+        border-radius: var(--radius-2);
+        font-size: var(--size-4);
+    }
+
+    .input-group input:focus {
+        border-color: var(--gray-7);
+        outline: none;
+    }
+
+    .submit-group {
+        margin-top: var(--size-3);
+    }
+
+    .submit-button {
+        width: 100%;
+        padding: var(--size-3);
+        font-size: var(--size-4);
+        color: var(--white);
+        background-color: var(--gray-8);
+        border: none;
+        border-radius: var(--radius-1);
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .submit-button:hover {
+        background-color: var(--gray-9);  // Even darker grey on hover
+    }
+</style>

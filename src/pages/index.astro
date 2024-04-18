@@ -1,16 +1,83 @@
 ---
+import { getUserFromCookie } from "../session";
+import Layout from "../components/layout.astro";
+import { db, Order, gt, and, eq, lt } from "astro:db";
 
+const user = getUserFromCookie(Astro.cookies);
+
+if (!user) return Astro.redirect("/login");
+
+const isAdmin = user.role === "admin";
+const today = new Date();
+const yesterday = new Date();
+yesterday.setDate(yesterday.getDate() - 1);
+
+let ordersCount;
+let todaysOrder;
+if (isAdmin) {
+  ordersCount = (
+    await db.select().from(Order).where(gt(Order.date_of_delivery, today))
+  ).length;
+} else {
+  todaysOrder = await db
+    .select()
+    .from(Order)
+    .where(
+      and(
+        eq(Order.user_id, user.id),
+        gt(Order.date_of_creation, today),
+        lt(Order.date_of_creation, yesterday)
+      )
+    );
+}
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Layout>
+  <h1>Bienvenido, {user.username}</h1>
+
+  {
+    isAdmin ? (
+      <div class="admin-actions">
+        <a href="/orders">
+          <button>Hay {ordersCount} ordenes para llenar &rarr;</button>
+        </a>
+        <div>
+          <a href="/products" class="cta-button">
+            <button>Productos &rarr;</button>
+          </a>
+          <a href="/products/new" class="cta-button">
+            <button>Crear nuevo producto &rarr;</button>
+          </a>
+        </div>
+        <a href="/signup" class="cta-button">
+          <button>Crear nuevo usuario &rarr;</button>
+        </a>
+      </div>
+    ) : todaysOrder ? (
+      <>
+        <p>Ya creaste tu orden de hoy:</p>
+        {todaysOrder.date_of_creation}
+      </>
+    ) : (
+      <button>Crea una nueva orden antes de las 16:00hrs</button>
+    )
+  }
+</Layout>
+
+<style>
+  .admin-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--size-4);
+    margin: var(--size-6) 0;
+  }
+
+  a {
+    color: currentColor;
+    text-decoration: none;
+  }
+
+  button {
+    width: max-content;
+  }
+</style>

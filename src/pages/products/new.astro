@@ -1,0 +1,109 @@
+---
+import Layout from "../../components/Layout.astro";
+import { getUserFromCookie } from "../../session";
+import { ProductType, db, DeliveryTime } from "astro:db";
+const { cookies, redirect } = Astro;
+
+const user = getUserFromCookie(cookies);
+if (!user || user.role !== "admin") {
+  return redirect("/permissions-error");
+}
+
+const productTypes = await db.select().from(ProductType);
+const deliveryTimes = await db.select().from(DeliveryTime);
+---
+
+<Layout>
+  <div class="product-form-container">
+    <h1>Create New Product</h1>
+    <form action="/api/products" method="POST">
+      <div class="form-group">
+        <label for="name">Nombre:</label>
+        <input type="text" id="name" name="name" required />
+      </div>
+      <div class="form-group">
+        <label for="bar_price">Precio Bar:</label>
+        <input
+          type="number"
+          step="1"
+          id="bar_price"
+          name="bar_price"
+          required
+        />
+      </div>
+      <div class="form-group">
+        <label for="franchise_price">Precio Franquicia:</label>
+        <input
+          type="number"
+          step="1"
+          id="franchise_price"
+          name="franchise_price"
+          required
+        />
+      </div>
+      <div class="form-group">
+        <label for="batch">Lote:</label>
+        <input type="text" id="batch" name="batch" required />
+      </div>
+      <div class="form-group">
+        <label for="type">Tipo:</label>
+        <select id="type" name="type" required>
+          {
+            productTypes.map((type) => (
+              <option value={type.id}>{type.type}</option>
+            ))
+          }
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="delivery_time">Tiempo de Entrega:</label>
+        <select id="delivery_time" name="delivery_time" required>
+          {
+            deliveryTimes.map((time) => (
+              <option value={time.id}>{time.time}hrs</option>
+            ))
+          }
+        </select>
+      </div>
+      <button type="submit">Crear Producto</button>
+    </form>
+  </div>
+</Layout>
+<style>
+  .product-form-container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid var(--gray-5);
+    border-radius: var(--radius-2);
+    background: var(--white);
+  }
+  .form-group {
+    margin-bottom: 15px;
+  }
+  label {
+    display: block;
+    margin-bottom: 5px;
+  }
+  input,
+  select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--gray-5);
+    border-radius: var(--radius-2);
+  }
+  button {
+    padding: 10px 15px;
+    background-color: var(--gray-8);
+    color: var(--white);
+    border-radius: var(--radius-2);
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: var(--gray-9);
+  }
+
+  select, option {
+    text-transform: capitalize;
+  }
+</style>

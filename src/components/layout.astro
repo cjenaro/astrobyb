@@ -1,0 +1,55 @@
+---
+import { redirectIfNotLoggedIn } from "../session";
+
+const { cookies, redirect, url } = Astro;
+
+const user = redirectIfNotLoggedIn({
+  cookies,
+  redirect,
+  url: url.pathname,
+});
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ByB</title>
+  </head>
+  <body>
+    <header>
+      <a href="/" class="logo">ByB</a>
+      {
+        user ? (
+          <form action="/api/logout" method="POST" style="margin: 0;">
+            <button type="submit" class="logout-button">
+              Log out
+            </button>
+          </form>
+        ) : (
+          ""
+        )
+      }
+    </header>
+    <main>
+      <slot />
+    </main>
+  </body>
+</html>
+<style is:global>
+  @import "open-props/style";
+  @import "open-props/normalize";
+  @import "open-props/buttons";
+
+  header {
+    padding: var(--size-4);
+    border-bottom: var(--size-1) solid;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  main {
+    padding: var(--size-4);
+  }
+</style>

@@ -1,0 +1,90 @@
+---
+import Layout from "../components/layout.astro";
+import { getUserFromCookie } from "../session";
+import { UserType, db } from "astro:db";
+
+const user = getUserFromCookie(Astro.cookies);
+
+if (!user || user.role !== "admin") return Astro.redirect("/permissions-error");
+
+const userTypes = await db.select().from(UserType);
+---
+
+<Layout>
+  <div class="signup-container">
+    <h1>Create New User</h1>
+    <form action="/api/users" method="POST" class="signup-form">
+      <div class="form-group">
+        <label for="name">Nombre:</label>
+        <input type="text" id="name" name="name" required />
+      </div>
+      <div class="form-group">
+        <label for="username">Usuario:</label>
+        <input type="text" id="username" name="username" required />
+      </div>
+      <div class="form-group">
+        <label for="password">Contraseña:</label>
+        <input type="password" id="password" name="password" required />
+      </div>
+      <div class="form-group">
+        <label for="confirm-password">Confirmar Contraseña:</label>
+        <input type="password" id="confirm-password" name="confirm-password" required />
+      </div>
+      <div class="form-group">
+        <label for="userType">Tipo:</label>
+        <select id="userType" name="userType" required>
+          {
+            userTypes.map((type) => (
+              <option value={type.id}>{type.type}</option>
+            ))
+          }
+        </select>
+      </div>
+      <button type="submit">Crear Usuario</button>
+    </form>
+  </div>
+</Layout>
+<style>
+  .signup-container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    background: var(--white);
+    border: 1px solid var(--gray-5);
+    border-radius: var(--radius-2);
+  }
+
+  .signup-form {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 5px;
+  }
+
+  input,
+  select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--gray-6);
+    border-radius: var(--radius-2);
+  }
+
+  button {
+    padding: 10px 15px;
+    background-color: var(--gray-8);
+    color: var(--white);
+    border-radius: var(--radius-2);
+    cursor: pointer;
+  }
+
+  button:hover {
+    background-color: var(--gray-9);
+  }
+</style>

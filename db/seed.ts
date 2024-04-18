@@ -1,11 +1,13 @@
 import {
   db,
   DeliveryTime,
+  Order,
   Product,
   ProductType,
   User,
   UserType,
 } from "astro:db";
+import bcrypt from "bcrypt";
 
 // https://astro.build/db/seed
 export default async function seed() {
@@ -54,6 +56,10 @@ export default async function seed() {
     },
   ]);
 
+  const adminHash = bcrypt.hashSync("adminhash", 10);
+  const barHash = bcrypt.hashSync("barhash", 10);
+  const franchiseHash = bcrypt.hashSync("franchisehash", 10);
+
   await db.insert(User).values([
     {
       id: 1,
@@ -62,7 +68,7 @@ export default async function seed() {
       name: "Jenaro",
       phone_number: "2944323222",
       type_id: 1,
-      password_hash: "adminhash",
+      password_hash: adminHash,
       username: "admin",
     },
     {
@@ -72,7 +78,7 @@ export default async function seed() {
       name: "Bar Example",
       phone_number: "2944323222",
       type_id: 2,
-      password_hash: "barhash",
+      password_hash: barHash,
       username: "bar",
     },
     {
@@ -82,7 +88,7 @@ export default async function seed() {
       name: "Franchise Example",
       phone_number: "2944323222",
       type_id: 3,
-      password_hash: "franchisehash",
+      password_hash: franchiseHash,
       username: "franchise",
     },
   ]);
@@ -123,6 +129,33 @@ export default async function seed() {
       delivery_time_id: 1,
       name: "Postre",
       type_id: 1,
+    },
+  ]);
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  await db.insert(Order).values([
+    {
+      id: 1,
+      date_of_creation: new Date(),
+      date_of_delivery: tomorrow,
+      user_id: 2,
+    },
+    {
+      id: 2,
+      date_of_creation: new Date(),
+      date_of_delivery: yesterday,
+      user_id: 2,
+    },
+    {
+      id: 3,
+      date_of_creation: new Date(),
+      date_of_delivery: tomorrow,
+      user_id: 2,
     },
   ]);
 }

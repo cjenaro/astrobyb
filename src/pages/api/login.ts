@@ -16,12 +16,12 @@ function generateToken(userData: {
       username: userData.username,
       role: userData.type,
     },
-    process.env.JWT_SECRET_KEY,
+    import.meta.env.JWT_SECRET_KEY,
     { expiresIn: "7d" }
   );
 }
 
-export const post: APIRoute = async function ({ request, cookies }) {
+export const POST: APIRoute = async function ({ request, cookies, redirect }) {
   const data = await request.formData();
   const username = data.get("username");
   const password = data.get("password");
@@ -42,14 +42,17 @@ export const post: APIRoute = async function ({ request, cookies }) {
 
   if (!user) {
     return new Response(JSON.stringify({ error: "User not found" }), {
-      status: 404,
+      status: 301,
       headers: {
         "Content-Type": "application/json",
       },
     });
   }
 
-  const passwordIsValid = await bcrypt.compare(password, user.password_hash);
+  const passwordIsValid = await bcrypt.compare(
+    password.toString(),
+    user.password_hash
+  );
 
   if (!passwordIsValid) {
     return new Response(JSON.stringify({ error: "Invalid password" }), {
@@ -83,16 +86,11 @@ export const post: APIRoute = async function ({ request, cookies }) {
 
   cookies.set("session_id", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: !!import.meta.env.PROD,
     maxAge: 60 * 60 * 24 * 7,
     path: "/",
     sameSite: "strict",
   });
 
-  return new Response(JSON.stringify({ success: true }), {
-    status: 200,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
+  return redirect("/");
 };

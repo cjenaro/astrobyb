@@ -1,0 +1,115 @@
+---
+import Layout from "../../components/layout.astro";
+import { Product, db, eq, DeliveryTime, ProductType, like } from "astro:db";
+import { getUserFromCookie } from "../../session";
+
+const user = getUserFromCookie(Astro.cookies);
+
+if (!user || user.role !== "admin") return Astro.redirect("/permissions-error");
+
+const qsp = new URLSearchParams(Astro.url.searchParams);
+const search = qsp.get("search") || "";
+
+const products = await db
+  .select()
+  .from(Product)
+  .where(like(Product.name, `%${search}%`))
+  .innerJoin(DeliveryTime, eq(Product.delivery_time_id, DeliveryTime.id))
+  .innerJoin(ProductType, eq(Product.type_id, ProductType.id));
+---
+
+<Layout>
+  <div class="products-container">
+    <form action="/products" method="GET" class="filter-form">
+      <input
+        type="text"
+        name="search"
+        placeholder="Filter products..."
+        value={search}
+      />
+      <button type="submit">Search</button>
+    </form>
+    <div class="product-list">
+      <div class="product-header">
+        <span class="header-item">Nombre</span>
+        <span class="header-item">Precio Bar</span>
+        <span class="header-item">Precio Franquicia</span>
+        <span class="header-item">Tiempo entrega</span>
+        <span class="header-item">Tipo</span>
+        <span class="header-item">Lote</span>
+      </div>
+      {
+        products.map(({ Product, ProductType, DeliveryTime }) => (
+          <div class="product-item" data-name={Product.name.toLowerCase()}>
+            <span class="product-name">{Product.name}</span>
+            <span class="product-price">${Product.bar_price.toFixed(2)}</span>
+            <span class="product-price">
+              ${Product.franchise_price.toFixed(2)}
+            </span>
+            <span class="product-delivery-time">{DeliveryTime.time} hrs</span>
+            <span class="product-type">{ProductType.type}</span>
+            <span class="product-batch">{Product.batch}</span>
+          </div>
+        ))
+      }
+    </div>
+
+    <a href="/products/new">
+      <button> Agregar nuevo producto &rarr; </button>
+    </a>
+  </div>
+</Layout>
+<style>
+  a {
+    color: currentColor;
+    text-decoration: none;
+    margin-top: var(--size-6);
+    display: inline-block;
+    justify-self: flex-end;
+  }
+
+  .products-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background: var(--white);
+    border: 1px solid var(--gray-5);
+    border-radius: var(--radius-2);
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .filter-form {
+    display: flex;
+    margin-bottom: 20px;
+  }
+
+  .filter-form input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--gray-6);
+    border-radius: var(--radius-2);
+  }
+
+  .filter-form button {
+    padding: 10px 15px;
+    margin-left: 10px;
+    background-color: var(--gray-8);
+    color: var(--white);
+    border-radius: var(--radius-2);
+    cursor: pointer;
+  }
+
+  .product-list div {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr) 0.25fr;
+    width: 100%;
+    border-bottom: 1px solid var(--gray-5);
+    padding: var(--size-2);
+    justify-items: flex-start;
+  }
+
+  .product-header {
+    background-color: var(--gray-8);
+  }
+</style>

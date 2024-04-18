@@ -13,9 +13,14 @@
     "@astrojs/check": "^0.5.10",
     "@astrojs/db": "^0.10.4",
     "@astrojs/netlify": "^5.2.0",
+    "@types/jsonwebtoken": "^9.0.6",
     "astro": "^4.6.2",
     "bcrypt": "^5.1.1",
     "jsonwebtoken": "^9.0.2",
+    "open-props": "^1.7.2",
     "typescript": "^5.4.5"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2"
   }
 }
