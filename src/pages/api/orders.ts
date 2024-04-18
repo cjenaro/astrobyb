@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { db, Order, OrderItem } from "astro:db";
-import { getUserFromCookie } from "../../session";
+import { getUserFromCookie, setFlashError } from "../../session";
 
 export const POST: APIRoute = async ({ cookies, request, redirect }) => {
   const user = getUserFromCookie(cookies);
@@ -16,11 +16,15 @@ export const POST: APIRoute = async ({ cookies, request, redirect }) => {
   ).toISOString();
 
   if (!items || Array.from(items).length === 0) {
+    setFlashError(cookies, "No hay productos seleccionados.");
+
     return redirect("/orders/new");
   }
 
-  if (!quantities.some((el) => !Number.isNaN(Number(el)) && Number(el) > 0))
+  if (!quantities.some((el) => !Number.isNaN(Number(el)) && Number(el) > 0)) {
+    setFlashError(cookies, "No hay productos seleccionados.");
     return redirect("/orders/new");
+  }
 
   const today = new Date();
 

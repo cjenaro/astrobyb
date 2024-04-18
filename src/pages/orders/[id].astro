@@ -1,13 +1,17 @@
 ---
 // Import necessary models and session utilities
 import Layout from "../../components/layout.astro";
-import { getUserFromCookie } from "../../session";
+import { getUserFromCookie, setFlashError } from "../../session";
 import { Order, OrderItem, Product, User, db, eq } from "astro:db";
 
 const user = getUserFromCookie(Astro.cookies);
 
 // Ensure user is an admin
-if (!user || user.role !== "admin") return Astro.redirect("/permissions-error");
+if (!user || user.role !== "admin") {
+  setFlashError(Astro.cookies, "Usted no tiene permiso para ver esta página.");
+
+  return Astro.redirect("/");
+}
 
 // Get the order ID from the URL
 const orderId = Number(Astro.params.id);

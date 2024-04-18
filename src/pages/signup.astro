@@ -1,11 +1,15 @@
 ---
 import Layout from "../components/layout.astro";
-import { getUserFromCookie } from "../session";
+import { getUserFromCookie, setFlashError } from "../session";
 import { UserType, db } from "astro:db";
 
 const user = getUserFromCookie(Astro.cookies);
 
-if (!user || user.role !== "admin") return Astro.redirect("/permissions-error");
+if (!user || user.role !== "admin") {
+  setFlashError(Astro.cookies, "Usted no tiene permiso para ver esta página.");
+
+  return Astro.redirect("/");
+}
 
 const userTypes = await db.select().from(UserType);
 ---

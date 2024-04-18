@@ -1,11 +1,15 @@
 ---
 import Layout from "../components/layout.astro";
 import { User, UserType, db, like, eq } from "astro:db";
-import { getUserFromCookie } from "../session";
+import { getUserFromCookie, setFlashError } from "../session";
 
 const user = getUserFromCookie(Astro.cookies);
 
-if (!user || user.role !== "admin") return Astro.redirect("/permissions-error");
+if (!user || user.role !== "admin") {
+  setFlashError(Astro.cookies, "Usted no tiene permiso para ver esta página.");
+
+  return Astro.redirect("/");
+}
 
 const qsp = new URLSearchParams(Astro.url.searchParams);
 const search = qsp.get("search") || "";
