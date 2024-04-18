@@ -19,14 +19,14 @@ if (isAdmin) {
     await db.select().from(Order).where(gt(Order.date_of_delivery, today))
   ).length;
 } else {
-  todaysOrder = await db
+  [todaysOrder] = await db
     .select()
     .from(Order)
     .where(
       and(
         eq(Order.user_id, user.id),
-        gt(Order.date_of_creation, today),
-        lt(Order.date_of_creation, yesterday)
+        lt(Order.date_of_creation, today),
+        gt(Order.date_of_creation, yesterday)
       )
     );
 }
@@ -49,17 +49,24 @@ if (isAdmin) {
             <button>Crear nuevo producto &rarr;</button>
           </a>
         </div>
-        <a href="/signup" class="cta-button">
-          <button>Crear nuevo usuario &rarr;</button>
-        </a>
+        <div>
+          <a href="/users" class="cta-button">
+            <button>Usuarios &rarr;</button>
+          </a>
+          <a href="/signup" class="cta-button">
+            <button>Crear nuevo usuario &rarr;</button>
+          </a>
+        </div>
       </div>
-    ) : todaysOrder ? (
-      <>
-        <p>Ya creaste tu orden de hoy:</p>
-        {todaysOrder.date_of_creation}
-      </>
     ) : (
-      <button>Crea una nueva orden antes de las 16:00hrs</button>
+      <a href="/orders/new">
+        <button>
+          {todaysOrder
+            ? `Ya creaste tu orden de hoy: ${new Date(todaysOrder.date_of_creation).toLocaleDateString("es-AR")}`
+            : "Crea una nueva orden antes de las 16:00hrs"}{" "}
+          &rarr;
+        </button>
+      </a>
     )
   }
 </Layout>
@@ -79,5 +86,9 @@ if (isAdmin) {
 
   button {
     width: max-content;
+  }
+
+  h1 {
+    margin-bottom: var(--size-6);
   }
 </style>

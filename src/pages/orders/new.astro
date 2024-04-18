@@ -1,0 +1,233 @@
+---
+import Layout from "../../components/layout.astro";
+import { getUserFromCookie } from "../../session";
+import {
+  Order,
+  db,
+  and,
+  eq,
+  gte,
+  lt,
+  Product,
+  DeliveryTime,
+  OrderItem,
+} from "astro:db";
+
+const user = getUserFromCookie(Astro.cookies);
+
+// Redirect if not logged in
+if (!user) return Astro.redirect("/login");
+
+// Check if the user has already placed an order today
+const today = new Date();
+today.setHours(0, 0, 0, 0); // Reset time to start of the day
+const tomorrow = new Date(today);
+tomorrow.setDate(tomorrow.getDate() + 1);
+
+const [existingOrder] = await db
+  .select()
+  .from(Order)
+  .where(
+    and(
+      eq(Order.user_id, user.id),
+      gte(Order.date_of_creation, today),
+      lt(Order.date_of_creation, tomorrow)
+    )
+  );
+
+let orderItems: {
+  OrderItem: {
+    id: number;
+    order_id: number;
+    product_id: number;
+    quantity: number;
+  };
+  Product: {
+    batch: number;
+    id: number;
+    name: string;
+    bar_price: number;
+    franchise_price: number;
+    delivery_time_id: number;
+    type_id: number;
+  };
+}[] = [];
+
+if (existingOrder) {
+  orderItems = await db
+    .select()
+    .from(OrderItem)
+    .where(eq(OrderItem.id, existingOrder.id))
+    .innerJoin(Product, eq(OrderItem.product_id, Product.id));
+}
+
+// Fetch products to populate order form
+const products = await db
+  .select()
+  .from(Product)
+  .innerJoin(DeliveryTime, eq(Product.delivery_time_id, DeliveryTime.id));
+---
+
+<Layout>
+  {
+    !existingOrder ? (
+      <div class="order-form-container">
+        <h2>Create New Order</h2>
+
+        <form action="/api/orders" method="POST" class="container">
+          <input
+            type="text"
+            id="productFilter"
+            placeholder="Filtrar productos..."
+          />
+          <ul id="productList">
+            {products.map(({ Product, DeliveryTime }) => (
+              <li class="product-item" data-name={Product.name.toLowerCase()}>
+                <span>{Product.name}</span>
+                <input type="hidden" name="product_id" value={Product.id} />
+
+                <input
+                  type="number"
+                  id={`quantity_${Product.id}`}
+                  name="quantity"
+                  min="0"
+                  step={Product.batch || 1}
+                  placeholder="Cantidad"
+                  data-delivery-time={DeliveryTime.time}
+                  value="0"
+                />
+              </li>
+            ))}
+          </ul>
+          <div>
+            <span>Fecha esperada de entrega: </span>
+            <span id="deliveryDate" />
+            <input type="hidden" name="delivery_date" id="deliveryDateInput" />
+          </div>
+          <button type="submit">Crear Orden</button>
+        </form>
+      </div>
+    ) : (
+      <div>
+        <h2>Tu orden de hoy</h2>
+        <p>
+          A ser entregada:{" "}
+          {new Date(existingOrder.date_of_delivery).toLocaleDateString("es-AR")}
+        </p>
+        <ul>
+          {orderItems.map(({ Product, OrderItem }) => (
+            <li>
+              {Product.name} - Cantidad: {OrderItem.quantity}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+</Layout>
+<script>
+  const filterElement = document.querySelector("#productFilter");
+  filterElement.addEventListener("input", filterProducts);
+
+  const productListElement = document.querySelectorAll("#productList input");
+  productListElement.forEach((element) => {
+    element.addEventListener("input", updateDeliveryDate);
+  });
+
+  function filterProducts() {
+    const filterValue = this.value;
+    const productList = document.querySelectorAll("#productList .product-item");
+
+    productList.forEach((item: HTMLElement) => {
+      const name = item.getAttribute("data-name");
+      item.style.display = name.includes(filterValue) ? "" : "none";
+    });
+  }
+
+  function updateDeliveryDate() {
+    const deliveryElement = document.getElementById("deliveryDate");
+    const deliveryInput = document.getElementById(
+      "deliveryDateInput"
+    ) as HTMLInputElement;
+
+    const maxTime = [...productListElement].reduce(
+      (prev: number, curr: HTMLInputElement) =>
+        Number(curr.value) > 0 && Number(curr.dataset.deliveryTime) > prev
+          ? Number(curr.dataset.deliveryTime)
+          : prev,
+      0
+    );
+
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + maxTime / 24);
+    deliveryElement.textContent = `${maxDate.toLocaleDateString("es-AR")} dentro de ${maxTime}hrs`;
+    deliveryInput.value = maxDate.toISOString();
+  }
+
+  updateDeliveryDate();
+</script>
+<style>
+  p {
+    margin: var(--size-2) 0;
+  }
+
+  ul {
+    margin: var(--size-2) 0;
+  }
+
+  #productFilter {
+    width: 100%;
+    margin: var(--size-4) 0;
+    border-radius: var(--radius-2);
+    padding: var(--size-2);
+  }
+
+  ul {
+    padding: 0;
+    margin-bottom: var(--size-4);
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  ul li {
+    width: 100%;
+    border-bottom: 1px solid var(--gray-5);
+    padding: var(--size-2);
+    margin: 0;
+  }
+
+  .order-form-container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    background: var(--white);
+    border: 1px solid var(--gray-5);
+    border-radius: var(--radius-2);
+  }
+
+  .product-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  input[type="number"] {
+    width: 100px;
+  }
+
+  button {
+    padding: 10px 15px;
+    background-color: var(--gray-8);
+    color: var(--white);
+    border-radius: var(--radius-2);
+    cursor: pointer;
+    margin-top: 20px;
+  }
+
+  button:hover {
+    background-color: var(--gray-9);
+  }
+</style>

@@ -1,0 +1,118 @@
+---
+import Layout from "../components/layout.astro";
+import { User, UserType, db, like, eq } from "astro:db";
+import { getUserFromCookie } from "../session";
+
+const user = getUserFromCookie(Astro.cookies);
+
+if (!user || user.role !== "admin") return Astro.redirect("/permissions-error");
+
+const qsp = new URLSearchParams(Astro.url.searchParams);
+const search = qsp.get("search") || "";
+
+const users = await db
+  .select()
+  .from(User)
+  .where(like(User.name, `%${search}%`))
+  .innerJoin(UserType, eq(User.type_id, UserType.id));
+---
+
+<Layout>
+  <div class="users-container">
+    <form action="/users" method="GET" class="filter-form">
+      <input
+        type="text"
+        name="search"
+        placeholder="Filter users..."
+        value={search}
+      />
+      <button type="submit">Search</button>
+    </form>
+    <div class="user-list">
+      <div class="user-header">
+        <span class="header-item">Nombre</span>
+        <span class="header-item">Usuario</span>
+        <span class="header-item">Tipo</span>
+        <span class="header-item">Nombre Contacto</span>
+        <span class="header-item">Numero de Teléfono</span>
+      </div>
+      {
+        users.map(({ User, UserType }) => (
+          <div class="user-item" data-name={User.name.toLowerCase()}>
+            <span class="user-name">{User.name}</span>
+            <span class="user-username">{User.username}</span>
+            <span class="user-role">{UserType.type}</span>
+            <span class="user-contact-name">{User.contact_name}</span>
+            <span class="user-phone-number">{User.phone_number}</span>
+          </div>
+        ))
+      }
+    </div>
+
+    <a href="/signup">
+      <button>Agregar nuevo usuario &rarr;</button>
+    </a>
+  </div>
+</Layout>
+<style>
+  a {
+    color: currentColor;
+    text-decoration: none;
+    margin-top: var(--size-6);
+    display: inline-block;
+    justify-self: flex-end;
+  }
+
+  .users-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background: var(--white);
+    border: 1px solid var(--gray-5);
+    border-radius: var(--radius-2);
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .filter-form {
+    display: flex;
+    margin-bottom: 20px;
+  }
+
+  .filter-form input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--gray-6);
+    border-radius: var(--radius-2);
+  }
+
+  .filter-form button {
+    padding: 10px 15px;
+    margin-left: 10px;
+    background-color: var(--gray-8);
+    color: var(--white);
+    border-radius: var(--radius-2);
+    cursor: pointer;
+  }
+
+  .user-list div {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    width: 100%;
+    border-bottom: 1px solid var(--gray-5);
+    padding: var(--size-2);
+    justify-items: flex-start;
+  }
+
+  .user-header {
+    background-color: var(--gray-8);
+  }
+
+  .user-header,
+  .user-item {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    padding: var(--size-2);
+    border-bottom: 1px solid var(--gray-5);
+  }
+</style>
