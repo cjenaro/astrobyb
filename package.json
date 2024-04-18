@@ -17,6 +17,7 @@
     "astro": "^4.6.2",
     "bcrypt": "^5.1.1",
     "jsonwebtoken": "^9.0.2",
+    "jspdf": "^2.5.1",
     "open-props": "^1.7.2",
     "typescript": "^5.4.5"
   },

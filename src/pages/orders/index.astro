@@ -1,0 +1,113 @@
+---
+import Layout from "../../components/layout.astro";
+import { db, gt, eq, Order, User, asc } from "astro:db";
+import { getUserFromCookie } from "../../session";
+
+const user = getUserFromCookie(Astro.cookies);
+
+if (!user || user.role !== "admin") return Astro.redirect("/permissions-error");
+
+const today = new Date();
+const orders = await db
+  .select()
+  .from(Order)
+  .where(gt(Order.date_of_delivery, today))
+  .innerJoin(User, eq(Order.user_id, User.id))
+  .orderBy(asc(Order.date_of_delivery));
+---
+
+<Layout>
+  <div class="orders-container">
+    <h1>Ordenes futuras</h1>
+    <ul>
+      <li>
+        <p>Usuario</p>
+        <p>Fecha de entrega</p>
+        <span></span>
+      </li>
+      {
+        orders.map(({ Order, User }) => (
+          <li>
+            <a href={`/orders/${Order.id}`}>
+              <p>{User.name}</p>
+              <p>{Order.date_of_delivery.toLocaleDateString("es-AR")}</p>
+              <span>&rarr;</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <a href="/orders/aggregated">
+      <button>Ver datos agregados &rarr;</button>
+    </a>
+  </div>
+</Layout>
+<style>
+  .orders-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background: var(--white);
+    border: 1px solid var(--gray-5);
+    border-radius: var(--radius-2);
+  }
+
+  a {
+    text-decoration: none;
+    color: currentColor;
+    display: grid;
+    grid-template-columns: 1fr 1fr 50px;
+    gap: var(--size-2);
+    padding: var(--size-2);
+    grid-column: -1/1;
+  }
+
+  a span {
+    margin-left: auto;
+    transition: transform 0.2s ease-out;
+  }
+
+  a:hover span {
+    transform: translateX(5px);
+  }
+
+  ul {
+    margin: var(--size-4) 0;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+  }
+
+  ul,
+  li {
+    list-style-type: none;
+    padding: 0;
+    width: 100%;
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: 1fr 1fr 50px;
+    border-bottom: 1px solid var(--gray-4);
+  }
+
+  li:first-of-type {
+    padding: var(--size-2);
+  }
+
+  button {
+    padding: 10px 15px;
+    background-color: var(--gray-8);
+    color: var(--white);
+    border-radius: var(--radius-2);
+    cursor: pointer;
+  }
+
+  button:hover {
+    background-color: var(--gray-9);
+  }
+
+  a {
+    text-decoration: none;
+  }
+</style>

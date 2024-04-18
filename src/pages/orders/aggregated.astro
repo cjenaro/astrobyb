@@ -1,0 +1,89 @@
+---
+// Import necessary models and utilities
+import Layout from "../../components/layout.astro";
+import { getUserFromCookie } from "../../session";
+import { Order, OrderItem, eq, db, sql, gt, Product, and, lte } from "astro:db";
+
+const user = getUserFromCookie(Astro.cookies);
+
+// Ensure the user is an admin
+if (!user || user.role !== "admin") return Astro.redirect("/permissions-error");
+
+const todayStart = new Date();
+todayStart.setHours(0, 0, 0, 0);
+const todayEnd = new Date();
+todayEnd.setHours(16, 0, 0, 0);
+
+const futureOrdersProducts = await db
+  .select({
+    productName: Product.name,
+    productId: OrderItem.product_id,
+    totalQuantity: sql`SUM(${OrderItem.quantity})`,
+  })
+  .from(Order)
+  .innerJoin(Product, eq(OrderItem.product_id, Product.id))
+  .innerJoin(OrderItem, eq(Order.id, OrderItem.order_id))
+  .where(
+    and(
+      gt(Order.date_of_creation, todayStart),
+      lte(Order.date_of_creation, todayEnd)
+    )
+  )
+  .groupBy(OrderItem.product_id);
+---
+
+<Layout>
+  <div class="aggregated-container">
+    <h2>Productos agregados de ordenes creadas hoy</h2>
+    <ul id="productList">
+      {
+        futureOrdersProducts.map(({ productName, totalQuantity }) => (
+          <li>
+            {productName}: {totalQuantity} unidades
+          </li>
+        ))
+      }
+    </ul>
+
+    <button id="download">Descargar como PDF</button>
+  </div>
+</Layout>
+<script>
+  import { jsPDF } from "jspdf";
+
+  const downloadCTA = document.querySelector("#download");
+  downloadCTA.addEventListener("click", generatePDF);
+
+  function generatePDF() {
+    const doc = new jsPDF();
+    const items = document.querySelectorAll("#productList li");
+    let content = `Productos a producir | ${new Date().toLocaleDateString("es-AR")}\n\n\n`;
+    items.forEach((item, index) => {
+      content += index + 1 + ". " + item.textContent;
+    });
+
+    doc.text(content, 10, 10);
+    doc.save("aggregated-products.pdf");
+  }
+</script>
+<style>
+  .aggregated-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background: var(--white);
+    border: 1px solid var(--gray-5);
+    border-radius: var(--radius-2);
+  }
+
+  ul {
+    list-style-type: none;
+    padding: 0;
+  }
+
+  li {
+    margin-bottom: 10px;
+    padding: 10px;
+    border-bottom: 1px solid var(--gray-4);
+  }
+</style>

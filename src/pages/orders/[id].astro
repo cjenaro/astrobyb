@@ -1,0 +1,80 @@
+---
+// Import necessary models and session utilities
+import Layout from "../../components/layout.astro";
+import { getUserFromCookie } from "../../session";
+import { Order, OrderItem, Product, User, db, eq } from "astro:db";
+
+const user = getUserFromCookie(Astro.cookies);
+
+// Ensure user is an admin
+if (!user || user.role !== "admin") return Astro.redirect("/permissions-error");
+
+// Get the order ID from the URL
+const orderId = Number(Astro.params.id);
+
+if (Number.isNaN(orderId)) return Astro.redirect("/orders");
+
+// Fetch the order and its related items and products
+const [order] = await db
+  .select()
+  .from(Order)
+  .where(eq(Order.id, orderId))
+  .innerJoin(User, eq(Order.user_id, User.id));
+
+const orderItems = await db
+  .select()
+  .from(OrderItem)
+  .where(eq(OrderItem.order_id, orderId))
+  .innerJoin(Product, eq(OrderItem.product_id, Product.id))
+  .execute();
+---
+
+<Layout>
+  <div class="order-details-container">
+    <h2>Detalles de la orden (ID: {order.Order.id})</h2>
+    <p>Usuario: {order.User.name}</p>
+    <p>
+      Fecha creada: {order.Order.date_of_creation.toLocaleDateString("es-AR")}
+    </p>
+    <p>
+      Fecha de entrega: {
+        order.Order.date_of_delivery.toLocaleDateString("es-AR")
+      }
+    </p>
+
+    <h5>Productos:</h5>
+    <ul>
+      {
+        orderItems.map(({ OrderItem, Product }) => (
+          <li>
+            <strong>{Product.name}</strong> (x{OrderItem.quantity})
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</Layout>
+<style>
+  h5,
+  h2 {
+    margin: var(--size-4) 0;
+  }
+
+  .order-details-container {
+    max-width: 400px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid var(--gray-5);
+    border-radius: var(--radius-2);
+  }
+
+  ul {
+    list-style-type: none;
+    padding: 0;
+  }
+
+  li {
+    padding: var(--size-2) 0;
+    border-bottom: 1px solid var(--gray-5);
+  }
+</style>
