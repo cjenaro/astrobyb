@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { db, eq, User, UserType } from "astro:db";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { createAuthSession } from "../../session";
 
 function generateToken(userData: {
   id: number;
@@ -63,14 +64,8 @@ export const POST: APIRoute = async function ({ request, cookies, redirect }) {
     name: user.name,
     id: user.id,
   });
-
-  cookies.set("session_id", token, {
-    httpOnly: true,
-    secure: !!import.meta.env.PROD,
-    maxAge: 60 * 60 * 24 * 7,
-    path: "/",
-    sameSite: "strict",
-  });
+  
+  createAuthSession(cookies, token)
 
   return redirect("/");
 };

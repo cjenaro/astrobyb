@@ -1,13 +1,7 @@
 ---
-import { redirectIfNotLoggedIn } from "../session";
+import { getUserFromCookie } from "../session";
 
-const { cookies, redirect, url } = Astro;
-
-const user = redirectIfNotLoggedIn({
-  cookies,
-  redirect,
-  url: url.pathname,
-});
+const user = getUserFromCookie(Astro.cookies);
 ---
 
 <html lang="en">

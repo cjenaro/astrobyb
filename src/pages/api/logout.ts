@@ -1,12 +1,8 @@
 import type { APIRoute } from "astro";
+import { destroyAuthSession } from "../../session";
 
 export const POST: APIRoute = async ({ cookies, redirect }) => {
-  cookies.set("session_id", "deleted", {
-    expires: new Date(0),
-    secure: true,
-    path: "/",
-    httpOnly: true,
-  });
+  destroyAuthSession(cookies);
 
   return redirect("/login", 302);
 };

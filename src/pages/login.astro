@@ -1,8 +1,12 @@
 ---
 import Layout from "../components/layout.astro";
-// import { redirectIfLoggedIn } from "../session";
-// const { cookies, redirect } = Astro;
-// return redirectIfLoggedIn({ cookies, redirect });
+import { getUserFromCookie } from "../session";
+
+const user = getUserFromCookie(Astro.cookies);
+
+if (user) {
+  return Astro.redirect("/")
+}
 ---
 
 <Layout>
