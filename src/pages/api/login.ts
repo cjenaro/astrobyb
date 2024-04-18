@@ -2,7 +2,7 @@ import type { APIRoute } from "astro";
 import { db, eq, User, UserType } from "astro:db";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { createAuthSession } from "../../session";
+import { createAuthSession, setFlashError } from "../../session";
 
 function generateToken(userData: {
   id: number;
@@ -37,6 +37,8 @@ export const POST: APIRoute = async function ({ request, cookies, redirect }) {
     .where(eq(User.username, username as string));
 
   if (!user) {
+    setFlashError(cookies, "No se encontro el usuario.");
+
     return redirect("/login");
   }
 
@@ -46,6 +48,8 @@ export const POST: APIRoute = async function ({ request, cookies, redirect }) {
   );
 
   if (!passwordIsValid) {
+    setFlashError(cookies, "Contraseña incorrecta.");
+
     return redirect("/login");
   }
 
@@ -64,8 +68,8 @@ export const POST: APIRoute = async function ({ request, cookies, redirect }) {
     name: user.name,
     id: user.id,
   });
-  
-  createAuthSession(cookies, token)
+
+  createAuthSession(cookies, token);
 
   return redirect("/");
 };

@@ -30,3 +30,30 @@ export function destroyAuthSession(cookies: AstroCookies) {
     httpOnly: true,
   });
 }
+
+export function setFlashError(cookies: AstroCookies, error: string) {
+  cookies.set("flash_session", error, {
+    httpOnly: true,
+    secure: !!import.meta.env.PROD,
+    maxAge: 60 * 60 * 24 * 7,
+    path: "/",
+    sameSite: "strict",
+  });
+}
+
+export function getFlashError(cookies: AstroCookies) {
+  const error = cookies.get("flash_session")?.value;
+
+  if (error && error !== "deleted") {
+    cookies.set("flash_session", "deleted", {
+      expires: new Date(0),
+      secure: true,
+      path: "/",
+      httpOnly: true,
+    });
+
+    return error;
+  } else {
+    return undefined;
+  }
+}

@@ -1,7 +1,8 @@
 ---
-import { getUserFromCookie } from "../session";
+import { getUserFromCookie, getFlashError } from "../session";
 
 const user = getUserFromCookie(Astro.cookies);
+const flashError = getFlashError(Astro.cookies);
 ---
 
 <html lang="en">
@@ -26,6 +27,7 @@ const user = getUserFromCookie(Astro.cookies);
       }
     </header>
     <main>
+      {flashError ? <p class="flash-error">{flashError}</p> : null}
       <slot />
     </main>
   </body>
@@ -45,5 +47,19 @@ const user = getUserFromCookie(Astro.cookies);
 
   main {
     padding: var(--size-4);
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .flash-error {
+    margin: var(--size-4) var(--size-2);
+    text-align: center;
+    max-width: 400px;
+    padding: var(--size-4);
+    border-radius: var(--radius-3);
+    background-color: var(--orange-6);
+    color: var(--gray-8);
+    box-shadow: var(--shadow-4);
   }
 </style>
