@@ -27,12 +27,7 @@ export const POST: APIRoute = async function ({ request, cookies, redirect }) {
   const password = data.get("password");
 
   if (!username || !password) {
-    return new Response(JSON.stringify({ error: "Missing credentials" }), {
-      status: 400,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    return redirect("/login");
   }
 
   const [user] = await db
@@ -41,12 +36,7 @@ export const POST: APIRoute = async function ({ request, cookies, redirect }) {
     .where(eq(User.username, username as string));
 
   if (!user) {
-    return new Response(JSON.stringify({ error: "User not found" }), {
-      status: 301,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    return redirect("/login");
   }
 
   const passwordIsValid = await bcrypt.compare(
@@ -55,12 +45,7 @@ export const POST: APIRoute = async function ({ request, cookies, redirect }) {
   );
 
   if (!passwordIsValid) {
-    return new Response(JSON.stringify({ error: "Invalid password" }), {
-      status: 401,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    return redirect("/login");
   }
 
   const [role] = await db
@@ -69,12 +54,7 @@ export const POST: APIRoute = async function ({ request, cookies, redirect }) {
     .where(eq(UserType.id, user.type_id));
 
   if (!role) {
-    return new Response(JSON.stringify({ error: "Invalid role" }), {
-      status: 401,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    return redirect("/login");
   }
 
   const token = generateToken({

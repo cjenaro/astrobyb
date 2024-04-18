@@ -15,7 +15,7 @@ const deliveryTimes = await db.select().from(DeliveryTime);
 
 <Layout>
   <div class="product-form-container">
-    <h1>Create New Product</h1>
+    <h2>Crear Nuevo Producto</h2>
     <form action="/api/products" method="POST">
       <div class="form-group">
         <label for="name">Nombre:</label>
@@ -103,7 +103,8 @@ const deliveryTimes = await db.select().from(DeliveryTime);
     background-color: var(--gray-9);
   }
 
-  select, option {
+  select,
+  option {
     text-transform: capitalize;
   }
 </style>
