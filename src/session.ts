@@ -45,15 +45,19 @@ export function getFlashError(cookies: AstroCookies) {
   const error = cookies.get("flash_session")?.value;
 
   if (error && error !== "deleted") {
-    cookies.set("flash_session", "deleted", {
-      expires: new Date(0),
-      secure: true,
-      path: "/",
-      httpOnly: true,
-    });
+    destroyFlashError(cookies);
 
     return error;
   } else {
     return undefined;
   }
+}
+
+export function destroyFlashError(cookies: AstroCookies) {
+  cookies.set("flash_session", "deleted", {
+    expires: new Date(0),
+    secure: true,
+    path: "/",
+    httpOnly: true,
+  });
 }
