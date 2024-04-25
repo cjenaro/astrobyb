@@ -1,0 +1,159 @@
+---
+// Import necessary models and session utilities
+import Layout from "../../components/layout.astro";
+import { getUserFromCookie, setFlashError } from "../../session";
+import { ProductType, DeliveryTime, Product, db, eq } from "astro:db";
+
+const user = getUserFromCookie(Astro.cookies);
+
+// Ensure user is an admin
+if (!user || user.role !== "admin") {
+  setFlashError(Astro.cookies, "Usted no tiene permiso para ver esta página.");
+
+  return Astro.redirect("/");
+}
+
+// Get the order ID from the URL
+const productId = Number(Astro.params.id);
+
+if (Number.isNaN(productId)) return Astro.redirect("/products");
+
+const [product] = await db
+  .select()
+  .from(Product)
+  .where(eq(Product.id, productId));
+const productTypes = await db.select().from(ProductType);
+const deliveryTimes = await db.select().from(DeliveryTime);
+---
+
+<Layout>
+  <div class="product-form-container">
+    <h2>Crear Nuevo Producto</h2>
+    <form action="/api/products" method="POST">
+      <input name="action" type="hidden" value="update" />
+      <input name="productId" type="hidden" value={product.id} />
+      <div class="form-group">
+        <label for="name">Nombre:</label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          required
+          value={product.name}
+        />
+      </div>
+      <div class="form-group">
+        <label for="bar_price">Precio Bar:</label>
+        <input
+          type="number"
+          step="1"
+          id="bar_price"
+          name="bar_price"
+          required
+          value={product.bar_price}
+        />
+      </div>
+      <div class="form-group">
+        <label for="franchise_price">Precio Franquicia:</label>
+        <input
+          type="number"
+          step="1"
+          id="franchise_price"
+          name="franchise_price"
+          required
+          value={product.franchise_price}
+        />
+      </div>
+      <div class="form-group">
+        <label for="batch">Lote:</label>
+        <input
+          type="text"
+          id="batch"
+          name="batch"
+          required
+          value={product.batch}
+        />
+      </div>
+      <div class="form-group">
+        <label for="type">Tipo:</label>
+        <select id="type" name="type" required value={product.type_id}>
+          {
+            productTypes.map((type) => (
+              <option value={type.id}>{type.type}</option>
+            ))
+          }
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="delivery_time">Tiempo de Entrega:</label>
+        <select
+          id="delivery_time"
+          name="delivery_time"
+          required
+          value={product.delivery_time_id}
+        >
+          {
+            deliveryTimes.map((time) => (
+              <option value={time.id}>{time.time}hrs</option>
+            ))
+          }
+        </select>
+      </div>
+      <button type="submit">Actualizar Producto</button>
+    </form>
+  </div>
+  <div class="product-form-container">
+    <form action="/api/products" method="POST">
+      <input type="hidden" name="productId" value={product.id} />
+      <input type="hidden" name="action" value="delete" />
+      <div class="form-group">
+        <input
+          type="text"
+          name="name"
+          placeholder="Ingresar el nombre del producto para eliminarlo..."
+        />
+      </div>
+      <button type="submit">Eliminar Producto</button>
+    </form>
+  </div>
+</Layout>
+<style>
+  .product-form-container {
+    max-width: 600px;
+    width: 100%;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid var(--gray-5);
+    border-radius: var(--radius-2);
+    background: var(--white);
+  }
+  .form-group {
+    margin-bottom: 15px;
+  }
+  label {
+    display: block;
+    margin-bottom: 5px;
+  }
+  input,
+  select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--gray-5);
+    border-radius: var(--radius-2);
+  }
+  button {
+    padding: 10px 15px;
+    background-color: var(--gray-8);
+    color: var(--white);
+    border-radius: var(--radius-2);
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: var(--gray-9);
+  }
+
+  select,
+  option {
+    text-transform: capitalize;
+  }
+</style>
